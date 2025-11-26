@@ -1,15 +1,27 @@
+import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Trash2, ShoppingBag, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 const Cart = () => {
   const { items, removeItem, totalPrice, clearCart } = useCart();
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [bookingData, setBookingData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    notes: ""
+  });
 
-  const handleCheckout = () => {
+  const handleBookingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
     const message = items
       .map(
         (item) =>
@@ -21,11 +33,13 @@ const Cart = () => {
       )
       .join("\n\n");
 
-    const fullMessage = `Hola! Me gustaría reservar los siguientes tours:\n\n${message}\n\n*Total: $${totalPrice}*`;
+    const fullMessage = `*Nueva Reserva*\n\nNombre: ${bookingData.name}\nEmail: ${bookingData.email}\nTeléfono: ${bookingData.phone}\n\n*Tours:*\n${message}\n\n*Total: $${totalPrice}*\n\nNotas: ${bookingData.notes}`;
     const whatsappUrl = `https://wa.me/1234567890?text=${encodeURIComponent(fullMessage)}`;
     
     window.open(whatsappUrl, "_blank");
-    toast.success("Redirigiendo a WhatsApp para finalizar tu reserva");
+    toast.success("Reserva enviada por WhatsApp");
+    clearCart();
+    setShowBookingForm(false);
   };
 
   if (items.length === 0) {
@@ -147,22 +161,97 @@ const Cart = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-2">
-                <Button
-                  onClick={handleCheckout}
-                  className={buttonVariants({ variant: "hero", className: "w-full" })}
-                >
-                  Finalizar Reserva por WhatsApp
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    clearCart();
-                    toast.success("Carrito vaciado");
-                  }}
-                  className="w-full"
-                >
-                  Vaciar Carrito
-                </Button>
+                {!showBookingForm ? (
+                  <>
+                    <Button
+                      onClick={() => setShowBookingForm(true)}
+                      className={buttonVariants({ variant: "hero", className: "w-full" })}
+                    >
+                      Reservar Ahora
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        clearCart();
+                        toast.success("Carrito vaciado");
+                      }}
+                      className="w-full"
+                    >
+                      Vaciar Carrito
+                    </Button>
+                  </>
+                ) : (
+                  <Card className="w-full">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Datos de Reserva</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <form onSubmit={handleBookingSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Nombre Completo *</Label>
+                          <Input
+                            id="name"
+                            value={bookingData.name}
+                            onChange={(e) => setBookingData({ ...bookingData, name: e.target.value })}
+                            placeholder="Juan Pérez"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email *</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={bookingData.email}
+                            onChange={(e) => setBookingData({ ...bookingData, email: e.target.value })}
+                            placeholder="juan@email.com"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">Teléfono *</Label>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            value={bookingData.phone}
+                            onChange={(e) => setBookingData({ ...bookingData, phone: e.target.value })}
+                            placeholder="+52 123 456 7890"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="notes">Notas Adicionales</Label>
+                          <Input
+                            id="notes"
+                            value={bookingData.notes}
+                            onChange={(e) => setBookingData({ ...bookingData, notes: e.target.value })}
+                            placeholder="Alergias, necesidades especiales, etc."
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2 pt-2">
+                          <Button
+                            type="submit"
+                            className={buttonVariants({ variant: "hero", className: "w-full" })}
+                          >
+                            Confirmar Reserva
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowBookingForm(false)}
+                            className="w-full"
+                          >
+                            Volver
+                          </Button>
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+                )}
               </CardFooter>
             </Card>
           </div>

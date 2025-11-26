@@ -2,7 +2,11 @@ import { useState } from "react";
 import { Hero } from "@/components/Hero";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { TourCard } from "@/components/TourCard";
+import { ComboCard } from "@/components/ComboCard";
+import { Reviews } from "@/components/Reviews";
+import { Footer } from "@/components/Footer";
 import { tours } from "@/lib/tours-data";
+import { combos } from "@/lib/combos-data";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
@@ -16,7 +20,25 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Hero />
       
-      <section className="container mx-auto px-4 py-16">
+      {/* Combos Section */}
+      <section className="container mx-auto px-4 py-16 bg-muted/30">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Combos Especiales
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Ahorra más con nuestros paquetes combinados
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {combos.map((combo) => (
+            <ComboCard key={combo.id} combo={combo} />
+          ))}
+        </div>
+      </section>
+
+      <section id="tours" className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Tours Destacados
@@ -37,6 +59,8 @@ const Index = () => {
           ))}
         </div>
       </section>
+
+      <Reviews />
 
       {/* Features Section */}
       <section className="bg-muted/30 py-16">
@@ -66,6 +90,8 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 };
