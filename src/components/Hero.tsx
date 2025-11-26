@@ -22,20 +22,11 @@ export const Hero = () => {
         <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto">
           Reserva tus tours favoritos de forma rápida y fácil. Vive experiencias inolvidables.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button className={buttonVariants({ variant: "hero", size: "xl" })}>
+        <div className="flex justify-center">
+          <Button className={buttonVariants({ variant: "coral", size: "xl" })}>
             <Search className="mr-2 h-5 w-5" />
             Explorar Tours
           </Button>
-          <a
-            href="https://wa.me/1234567890"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button className={buttonVariants({ variant: "coral", size: "xl" })}>
-              Contactar por WhatsApp
-            </Button>
-          </a>
         </div>
       </div>
     </section>
