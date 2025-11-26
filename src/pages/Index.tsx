@@ -1,12 +1,71 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { Hero } from "@/components/Hero";
+import { CategoryFilter } from "@/components/CategoryFilter";
+import { TourCard } from "@/components/TourCard";
+import { tours } from "@/lib/tours-data";
 
 const Index = () => {
+  const [selectedCategory, setSelectedCategory] = useState("Todos");
+
+  const filteredTours =
+    selectedCategory === "Todos"
+      ? tours
+      : tours.filter((tour) => tour.category === selectedCategory);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Hero />
+      
+      <section className="container mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Tours Destacados
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Explora nuestras mejores experiencias cuidadosamente seleccionadas para ti
+          </p>
+        </div>
+
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredTours.map((tour) => (
+            <TourCard key={tour.id} tour={tour} />
+          ))}
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="bg-muted/30 py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div className="space-y-2">
+              <div className="text-4xl mb-4">🏖️</div>
+              <h3 className="text-xl font-semibold text-foreground">Reserva Fácil</h3>
+              <p className="text-muted-foreground">
+                Proceso simple y rápido en pocos clics
+              </p>
+            </div>
+            <div className="space-y-2">
+              <div className="text-4xl mb-4">💯</div>
+              <h3 className="text-xl font-semibold text-foreground">Mejor Precio</h3>
+              <p className="text-muted-foreground">
+                Precios especiales y descuentos exclusivos
+              </p>
+            </div>
+            <div className="space-y-2">
+              <div className="text-4xl mb-4">⭐</div>
+              <h3 className="text-xl font-semibold text-foreground">Experiencia Garantizada</h3>
+              <p className="text-muted-foreground">
+                Tours con las mejores calificaciones
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
