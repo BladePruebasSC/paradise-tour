@@ -1,17 +1,30 @@
 import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
+import { bookingsService } from "@/lib/supabase/bookings";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, ShoppingBag, Calendar } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, ShoppingBag, Calendar, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 const Cart = () => {
-  const { items, removeItem, totalPrice, clearCart } = useCart();
+  const { 
+    items, 
+    removeItem, 
+    totalPrice, 
+    clearCart,
+    discountPercentage,
+    discountAmount,
+    finalPrice,
+    referralCode,
+    referralUser
+  } = useCart();
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingData, setBookingData] = useState({
     name: "",
     email: "",
@@ -19,27 +32,64 @@ const Cart = () => {
     notes: ""
   });
 
-  const handleBookingSubmit = (e: React.FormEvent) => {
+  const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const message = items
-      .map(
-        (item) =>
-          `*${item.tour.title}*\nFecha: ${item.date}\nAdultos: ${item.adults}, Niños: ${item.children}, Infantes: ${item.infants}\nSubtotal: $${
-            item.tour.priceAdult * item.adults +
-            item.tour.priceChild * item.children +
-            item.tour.priceInfant * item.infants
-          }`
-      )
-      .join("\n\n");
+    setIsSubmitting(true);
+    try {
+      // Crear reservas para cada item del carrito
+      const bookingPromises = items.map((item) => {
+        const itemTotal = 
+          item.tour.priceAdult * item.adults +
+          item.tour.priceChild * item.children +
+          item.tour.priceInfant * item.infants;
+        
+        return bookingsService.create({
+          tour_id: item.tour.id,
+          customer_name: bookingData.name,
+          customer_email: bookingData.email,
+          customer_phone: bookingData.phone,
+          booking_date: item.date,
+          adults: item.adults,
+          children: item.children,
+          infants: item.infants,
+          total_price: itemTotal,
+          notes: bookingData.notes || null,
+          referral_code: referralCode || null,
+        });
+      });
 
-    const fullMessage = `*Nueva Reserva*\n\nNombre: ${bookingData.name}\nEmail: ${bookingData.email}\nTeléfono: ${bookingData.phone}\n\n*Tours:*\n${message}\n\n*Total: $${totalPrice}*\n\nNotas: ${bookingData.notes}`;
-    const whatsappUrl = `https://wa.me/1234567890?text=${encodeURIComponent(fullMessage)}`;
-    
-    window.open(whatsappUrl, "_blank");
-    toast.success("Reserva enviada por WhatsApp");
-    clearCart();
-    setShowBookingForm(false);
+      await Promise.all(bookingPromises);
+
+      // También enviar por WhatsApp
+      const message = items
+        .map(
+          (item) =>
+            `*${item.tour.title}*\nFecha: ${item.date}\nAdultos: ${item.adults}, Niños: ${item.children}, Infantes: ${item.infants}\nSubtotal: $${
+              item.tour.priceAdult * item.adults +
+              item.tour.priceChild * item.children +
+              item.tour.priceInfant * item.infants
+            }`
+        )
+        .join("\n\n");
+
+      const discountText = discountPercentage > 0 
+        ? `\n*Descuento aplicado: ${discountPercentage}% (-$${discountAmount.toFixed(2)})*` 
+        : '';
+      
+      const fullMessage = `*Nueva Reserva*\n\nNombre: ${bookingData.name}\nEmail: ${bookingData.email}\nTeléfono: ${bookingData.phone}\n\n*Tours:*\n${message}\n\n*Subtotal: $${totalPrice.toFixed(2)}*${discountText}\n*Total: $${finalPrice.toFixed(2)}*\n\nNotas: ${bookingData.notes}`;
+      const whatsappUrl = `https://wa.me/1234567890?text=${encodeURIComponent(fullMessage)}`;
+      
+      window.open(whatsappUrl, "_blank");
+      toast.success("Reserva creada correctamente");
+      clearCart();
+      setShowBookingForm(false);
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      toast.error("Error al crear la reserva. Por favor intenta de nuevo.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (items.length === 0) {
@@ -153,11 +203,36 @@ const Cart = () => {
                     );
                   })}
                 </div>
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold">Total</span>
-                    <span className="text-3xl font-bold text-primary">${totalPrice}</span>
+                {referralCode && referralUser && discountPercentage > 0 && (
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200 my-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Tag className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-semibold text-green-700">
+                        Descuento aplicado ({referralUser.name})
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Descuento ({discountPercentage}%):</span>
+                      <span className="font-semibold text-green-600">-${discountAmount.toFixed(2)}</span>
+                    </div>
                   </div>
+                )}
+                <div className="border-t pt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-lg font-semibold">Subtotal</span>
+                    <span className="text-xl font-bold">${totalPrice.toFixed(2)}</span>
+                  </div>
+                  {discountPercentage > 0 ? (
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold">Total</span>
+                      <span className="text-3xl font-bold text-primary">${finalPrice.toFixed(2)}</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold">Total</span>
+                      <span className="text-3xl font-bold text-primary">${totalPrice.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-2">
@@ -236,8 +311,9 @@ const Cart = () => {
                           <Button
                             type="submit"
                             className={buttonVariants({ variant: "hero", className: "w-full" })}
+                            disabled={isSubmitting}
                           >
-                            Confirmar Reserva
+                            {isSubmitting ? "Procesando..." : "Confirmar Reserva"}
                           </Button>
                           <Button
                             type="button"

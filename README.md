@@ -32,9 +32,23 @@ cd <YOUR_PROJECT_NAME>
 # Step 3: Install the necessary dependencies.
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Configure Supabase (see SUPABASE_SETUP.md for details)
+# Create a .env file with your Supabase credentials:
+# VITE_SUPABASE_URL=your_supabase_url
+# VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Step 5: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
+
+## Supabase Configuration
+
+This project uses Supabase as its database. To set it up:
+
+1. Read the [Supabase Setup Guide](./SUPABASE_SETUP.md) for detailed instructions
+2. Create a Supabase project at [supabase.com](https://app.supabase.com)
+3. Run the SQL script in `supabase-schema.sql` to create the necessary tables
+4. Add your Supabase credentials to the `.env` file
 
 **Edit a file directly in GitHub**
 
@@ -59,6 +73,8 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (Base de datos)
+- React Query (Gestión de estado del servidor)
 
 ## How can I deploy this project?
 

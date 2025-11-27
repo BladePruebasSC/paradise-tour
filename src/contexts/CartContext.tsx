@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { CartItem } from "@/types/tour";
+import { getReferralCode } from "@/lib/referral";
+import { dashboardUsersService } from "@/lib/supabase/dashboard-users";
 
 interface CartContextType {
   items: CartItem[];
@@ -9,6 +11,11 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  discountPercentage: number;
+  discountAmount: number;
+  finalPrice: number;
+  referralCode: string | null;
+  referralUser: any | null;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -18,10 +25,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const saved = localStorage.getItem("cart");
     return saved ? JSON.parse(saved) : [];
   });
+  const [referralUser, setReferralUser] = useState<any | null>(null);
 
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(items));
   }, [items]);
+
+  useEffect(() => {
+    // Cargar información del usuario de referido si existe código
+    const loadReferralUser = async () => {
+      const code = getReferralCode();
+      if (code) {
+        try {
+          const user = await dashboardUsersService.getByReferralCode(code);
+          setReferralUser(user);
+        } catch (error) {
+          console.error("Error loading referral user:", error);
+        }
+      } else {
+        setReferralUser(null);
+      }
+    };
+    loadReferralUser();
+  }, []);
 
   const addItem = (item: CartItem) => {
     setItems((prev) => {
@@ -64,6 +90,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return sum + tourTotal;
   }, 0);
 
+  const referralCode = getReferralCode();
+  const discountPercentage = referralUser?.discount_percentage || 0;
+  const discountAmount = (totalPrice * discountPercentage) / 100;
+  const finalPrice = totalPrice - discountAmount;
+
   return (
     <CartContext.Provider
       value={{
@@ -74,6 +105,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearCart,
         totalItems,
         totalPrice,
+        discountPercentage,
+        discountAmount,
+        finalPrice,
+        referralCode,
+        referralUser,
       }}
     >
       {children}

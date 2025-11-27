@@ -1,26 +1,34 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { tours } from "@/lib/tours-data";
+import { useTour } from "@/hooks/useTours";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
-import { Clock, Star, Users, Calendar, Minus, Plus, Check } from "lucide-react";
+import { Clock, Star, Users, Calendar, Minus, Plus, Check, Tag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const TourDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addItem } = useCart();
-  const tour = tours.find((t) => t.id === id);
+  const { addItem, discountPercentage, referralUser } = useCart();
+  const { data: tour, isLoading } = useTour(id || "");
 
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
   const [selectedDate, setSelectedDate] = useState("");
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <p className="text-muted-foreground">Cargando tour...</p>
+      </div>
+    );
+  }
 
   if (!tour) {
     return (
@@ -54,10 +62,16 @@ const TourDetail = () => {
     navigate("/carrito");
   };
 
-  const totalPrice =
-    tour.priceAdult * adults +
-    tour.priceChild * children +
-    tour.priceInfant * infants;
+  const subtotal =
+    (tour.priceAdult || 0) * adults +
+    (tour.priceChild || 0) * children +
+    (tour.priceInfant || 0) * infants;
+  
+  const discountAmount = discountPercentage > 0 
+    ? (subtotal * discountPercentage) / 100 
+    : 0;
+  
+  const totalPrice = subtotal - discountAmount;
 
   const Counter = ({
     value,
@@ -181,17 +195,17 @@ const TourDetail = () => {
                     value={adults}
                     onChange={setAdults}
                     min={0}
-                    label={`Adultos - $${tour.priceAdult}`}
+                    label={`Adultos - $${(tour.priceAdult || 0).toFixed(2)}`}
                   />
                   <Counter
                     value={children}
                     onChange={setChildren}
-                    label={`Niños - $${tour.priceChild}`}
+                    label={`Niños - $${(tour.priceChild || 0).toFixed(2)}`}
                   />
                   <Counter
                     value={infants}
                     onChange={setInfants}
-                    label={`Infantes - ${tour.priceInfant === 0 ? "Gratis" : `$${tour.priceInfant}`}`}
+                    label={`Infantes - ${(tour.priceInfant || 0) === 0 ? "Gratis" : `$${(tour.priceInfant || 0).toFixed(2)}`}`}
                   />
                 </div>
 

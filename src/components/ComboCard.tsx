@@ -2,11 +2,19 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Badge } from "@/components/ui/badge";
-import { Combo } from "@/lib/combos-data";
 import { Link } from "react-router-dom";
 
 interface ComboCardProps {
-  combo: Combo;
+  combo: {
+    id: string;
+    title: string;
+    description: string;
+    tourIds?: string[];
+    originalPrice: number;
+    discountedPrice: number;
+    discount: number;
+    image: string;
+  };
 }
 
 export const ComboCard = ({ combo }: ComboCardProps) => {

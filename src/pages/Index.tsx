@@ -1,20 +1,27 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Hero } from "@/components/Hero";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { TourCard } from "@/components/TourCard";
 import { ComboCard } from "@/components/ComboCard";
 import { Reviews } from "@/components/Reviews";
 import { Footer } from "@/components/Footer";
-import { tours } from "@/lib/tours-data";
-import { combos } from "@/lib/combos-data";
+import { useTours, useToursByCategory } from "@/hooks/useTours";
+import { useCombos } from "@/hooks/useCombos";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
+  
+  // Obtener tours desde Supabase
+  const { data: allTours = [], isLoading: toursLoading } = useTours();
+  const { data: categoryTours = [], isLoading: categoryLoading } = useToursByCategory(selectedCategory);
+  const { data: combos = [], isLoading: combosLoading } = useCombos();
 
-  const filteredTours =
-    selectedCategory === "Todos"
-      ? tours
-      : tours.filter((tour) => tour.category === selectedCategory);
+  const filteredTours = useMemo(() => {
+    if (selectedCategory === "Todos") {
+      return allTours;
+    }
+    return categoryTours.length > 0 ? categoryTours : allTours.filter((tour) => tour.category === selectedCategory);
+  }, [selectedCategory, allTours, categoryTours]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -31,11 +38,17 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {combos.map((combo) => (
-            <ComboCard key={combo.id} combo={combo} />
-          ))}
-        </div>
+        {combosLoading ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Cargando combos...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {combos.map((combo) => (
+              <ComboCard key={combo.id} combo={combo} />
+            ))}
+          </div>
+        )}
       </section>
 
       <section id="tours" className="container mx-auto px-4 py-16">
@@ -53,11 +66,17 @@ const Index = () => {
           onSelectCategory={setSelectedCategory}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredTours.map((tour) => (
-            <TourCard key={tour.id} tour={tour} />
-          ))}
-        </div>
+        {toursLoading || categoryLoading ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Cargando tours...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredTours.map((tour) => (
+              <TourCard key={tour.id} tour={tour} />
+            ))}
+          </div>
+        )}
       </section>
 
       <Reviews />
